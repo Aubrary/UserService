@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using UserService.Data;
 using UserService.Entities;
 using UserService.Helpers;
 using UserService.Interfaces;
@@ -15,7 +16,7 @@ namespace UserService.Services
 
     public class UserLoginService : IUserLoginService
     {
-        // users hardcoded for simplicity, store in a db with hashed passwords in production applications
+        // users hardcoded for testing
         private List<User> _users = new List<User>
         { 
             new User { Id = new Guid("e7a23854-d560-4dd2-9d06-e7dbac39b50a"), FirstName = "Admin", LastName = "User", Username = "admin", Password = "admin", Role = Role.Admin },
@@ -23,15 +24,17 @@ namespace UserService.Services
         };
 
         private readonly AppSettings _appSettings;
+        protected readonly UserServiceContext Context;
 
-        public UserLoginService(IOptions<AppSettings> appSettings)
+        public UserLoginService(UserServiceContext context, IOptions<AppSettings> appSettings)
         {
             _appSettings = appSettings.Value;
+            Context = context;
         }
 
         public User Authenticate(string username, string password)
         {
-            var user = _users.SingleOrDefault(x => x.Username == username && x.Password == password);
+            var user = Context.Users.FirstOrDefault(e => e.Username == username && e.Password == password);
 
             // return null if user not found
             if (user == null)
@@ -59,17 +62,30 @@ namespace UserService.Services
             return user;
         }
 
+        public User MapToEntity(User user, User entity = null)
+        {
+            if (entity == null)
+            {
+                entity = new User();
+            }
+
+            entity.Username = user.Username;
+            entity.Password = user.Password;
+            entity.FirstName = user.FirstName;
+            entity.LastName = user.LastName;
+            entity.Role = user.Role;
+
+            return entity;
+        }
+
         public IEnumerable<User> GetAll()
         {
-            // return users without passwords
-            return _users.Select(x => {
-                x.Password = null;
-                return x;
-            });
+            
+            return Context.Users;
         }
 
         public User GetById(Guid id) {
-            var user = _users.FirstOrDefault(x => x.Id == id);
+            var user = Context.Users.FirstOrDefault(e => e.Id == id);
 
             // return user without password
             if (user != null) 
@@ -77,5 +93,12 @@ namespace UserService.Services
 
             return user;
         }
+
+        public static User WithoutPassword(User user)
+        {
+            user.Password = null;
+            return user;
+        }
+
     }
 }

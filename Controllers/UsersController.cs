@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UserService.Data;
 using UserService.Entities;
 using UserService.Interfaces;
 using UserService.Services;
@@ -13,10 +14,12 @@ namespace UserService.Controllers
     public class UsersController : ControllerBase
     {
         private IUserLoginService _userLoginService;
+        private readonly UserServiceContext _context;
 
-        public UsersController(IUserLoginService userLoginService)
+        public UsersController(IUserLoginService userLoginService, UserServiceContext context)
         {
             _userLoginService = userLoginService;
+            _context = context;
         }
 
         [AllowAnonymous]
@@ -30,12 +33,27 @@ namespace UserService.Controllers
 
             return Ok(user);
         }
+        
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public ActionResult<User> RegisterUser(User model)
+        {
+
+            var entity = _userLoginService.MapToEntity(model);
+            entity.Role = "Subscriber";
+            
+            _context.Users.Add(entity);
+            _context.SaveChanges();
+
+            return Ok(entity);
+        }
 
         [Authorize(Roles = Role.Admin)]
         [HttpGet]
         public IActionResult GetAll()
         {
             var users =  _userLoginService.GetAll();
+            
             return Ok(users);
         }
 
@@ -48,7 +66,7 @@ namespace UserService.Controllers
                 return NotFound();
             }
 
-            // only allow admins to access other user records
+            // Only administrators can access other users.
             var currentUserId = Guid.Parse(User.Identity.Name);
             if (id != currentUserId && !User.IsInRole(Role.Admin)) {
                 return Forbid();

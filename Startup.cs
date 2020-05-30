@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using UserService.Data;
 using UserService.Helpers;
 using UserService.Services;
 using UserService.Interfaces;
@@ -24,6 +26,10 @@ namespace UserService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            
+            services.AddDbContext<UserServiceContext>
+                (options => options.UseNpgsql(Configuration["Data:UserServiceConnection:ConnectionString"]));
+            
             services.AddCors();
             services.AddMvc(option => option.EnableEndpointRouting = false);
 
