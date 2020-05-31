@@ -40,7 +40,7 @@ namespace UserService.Controllers
         {
 
             var entity = _userLoginService.MapToEntity(model);
-            entity.Role = "Subscriber";
+            entity.Role = Role.Subscriber;
             
             _context.Users.Add(entity);
             _context.SaveChanges();
