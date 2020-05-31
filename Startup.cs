@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -70,10 +71,26 @@ namespace UserService
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
-
+            UpdateDatabase(app);
+            
             app.UseAuthentication();
             
             app.UseMvc();
+        }
+        
+        private static void UpdateDatabase(IApplicationBuilder app)
+        {
+            Console.WriteLine("Migrating...");
+            using (var serviceScope = app.ApplicationServices
+                .GetRequiredService<IServiceScopeFactory>()
+                .CreateScope())
+            {
+                using (var context = serviceScope.ServiceProvider.GetService<UserServiceContext>())
+                {
+                    context.Database.Migrate();
+                    Console.WriteLine("Migrated!");
+                }
+            }
         }
     }
 }
