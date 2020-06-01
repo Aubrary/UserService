@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using UserService.Data;
 using UserService.Helpers;
 using UserService.Services;
@@ -30,6 +31,11 @@ namespace UserService
             
             services.AddDbContext<UserServiceContext>
                 (options => options.UseNpgsql(Configuration["Data:UserServiceConnection:ConnectionString"]));
+            
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "UserService API", Version = "v1" });
+            });
             
             services.AddCors();
             services.AddMvc(option => option.EnableEndpointRouting = false);
@@ -71,6 +77,12 @@ namespace UserService
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/userservice/swagger/v1/swagger.json", "UserService API V1 Traefik");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "UserService API V1");
+            });
             UpdateDatabase(app);
             
             app.UseAuthentication();
